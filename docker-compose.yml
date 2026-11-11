@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: users-postgres
+    environment:
+      POSTGRES_DB: users_db
+      POSTGRES_USER: users_app
+      POSTGRES_PASSWORD: users_app
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U users_app -d users_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - users_pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: users-service
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_R2DBC_URL: r2dbc:postgresql://db:5432/users_db
+      DB_JDBC_URL: jdbc:postgresql://db:5432/users_db
+      DB_USER: users_app
+      DB_PASSWORD: users_app
+      JWT_SECRET: change-me-in-production-0123456789abcdef
+      ADMIN_SEED_ENABLED: "true"
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: admin12345
+    ports:
+      - "9000:9000"
+
+volumes:
+  users_pgdata:
