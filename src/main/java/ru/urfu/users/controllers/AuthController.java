@@ -7,13 +7,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
+import ru.urfu.users.dto.ApiResponse;
 import ru.urfu.users.dto.AuthResponse;
 import ru.urfu.users.dto.LoginRequest;
 import ru.urfu.users.dto.RegisterRequest;
 import ru.urfu.users.services.AuthService;
 import ru.urfu.users.validators.RequestValidator;
 
-
+/**
+ * Регистрация и вход — единственные точки, доступные без токена.
+ */
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -27,14 +30,16 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public Mono<ResponseEntity<AuthResponse>> register(@RequestBody(required = false) RegisterRequest request) {
+    public Mono<ResponseEntity<ApiResponse<AuthResponse>>> register(
+            @RequestBody(required = false) RegisterRequest request
+    ) {
         RegisterRequest valid = validator.validateRegister(request);
         return authService.register(valid)
-                .map(response -> ResponseEntity.status(HttpStatus.CREATED).body(response));
+                .map(response -> ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response)));
     }
 
     @PostMapping("/login")
-    public Mono<AuthResponse> login(@RequestBody(required = false) LoginRequest request) {
-        return authService.login(validator.validateLogin(request));
+    public Mono<ApiResponse<AuthResponse>> login(@RequestBody(required = false) LoginRequest request) {
+        return authService.login(validator.validateLogin(request)).map(ApiResponse::ok);
     }
 }

@@ -13,8 +13,11 @@ import org.springframework.security.web.server.authorization.ServerAccessDeniedH
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-import ru.urfu.users.dto.ErrorResponse;
+import ru.urfu.users.dto.ApiResponse;
 
+/**
+ * 401 и 403 в том же конверте, что и остальные ответы API.
+ */
 @Component
 public class SecurityExceptionHandler implements ServerAuthenticationEntryPoint, ServerAccessDeniedHandler {
 
@@ -27,16 +30,16 @@ public class SecurityExceptionHandler implements ServerAuthenticationEntryPoint,
     @Override
     public Mono<Void> commence(ServerWebExchange exchange, AuthenticationException exception) {
         return write(exchange, HttpStatus.UNAUTHORIZED,
-                new ErrorResponse("UNAUTHORIZED", "Требуется аутентификация: передайте Bearer-токен"));
+                ApiResponse.error("UNAUTHORIZED", "Требуется аутентификация: передайте Bearer-токен"));
     }
 
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, AccessDeniedException exception) {
         return write(exchange, HttpStatus.FORBIDDEN,
-                new ErrorResponse("FORBIDDEN", "Недостаточно прав для этой операции"));
+                ApiResponse.error("FORBIDDEN", "Недостаточно прав для этой операции"));
     }
 
-    private Mono<Void> write(ServerWebExchange exchange, HttpStatus status, ErrorResponse body) {
+    private Mono<Void> write(ServerWebExchange exchange, HttpStatus status, ApiResponse<Void> body) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(status);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);

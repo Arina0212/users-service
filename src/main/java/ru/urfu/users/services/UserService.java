@@ -12,6 +12,7 @@ import ru.urfu.users.dto.UserResponse;
 import ru.urfu.users.dto.UserSummary;
 import ru.urfu.users.dto.UserUpdateRequest;
 import ru.urfu.users.dto.UsersPage;
+import ru.urfu.users.exception.ForbiddenException;
 import ru.urfu.users.exception.NotFoundException;
 import ru.urfu.users.mapper.UserMapper;
 
@@ -71,7 +72,10 @@ public class UserService {
                 .map(ItemsResponse::new);
     }
 
-    public Mono<Void> deleteUser(long id) {
+    public Mono<Void> deleteUser(long id, boolean admin) {
+        if (!admin) {
+            return Mono.error(new ForbiddenException("Удалять пользователей может только admin"));
+        }
         return users.deleteUser(id)
                 .flatMap(deleted -> deleted
                         ? Mono.<Void>empty()

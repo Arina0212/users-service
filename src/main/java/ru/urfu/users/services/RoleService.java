@@ -8,10 +8,15 @@ import ru.urfu.users.domain.Role;
 import ru.urfu.users.domain.RoleCode;
 import ru.urfu.users.dto.ItemsResponse;
 import ru.urfu.users.dto.RoleResponse;
+import ru.urfu.users.exception.ForbiddenException;
 import ru.urfu.users.exception.NotFoundException;
 import ru.urfu.users.exception.ValidationException;
 import ru.urfu.users.mapper.UserMapper;
 
+/**
+ * Справочник ролей и выдача ролей пользователю. Решения о правах принимаются здесь,
+ * чтобы отказ был логической ошибкой с HTTP 200 и кодом в теле.
+ */
 @Service
 public class RoleService {
 
@@ -23,7 +28,10 @@ public class RoleService {
         this.mapper = mapper;
     }
 
-    public Mono<ItemsResponse<RoleResponse>> getRoles() {
+    public Mono<ItemsResponse<RoleResponse>> getRoles(boolean admin) {
+        if (!admin) {
+            return Mono.error(adminOnly());
+        }
         return toItems(users.findRoles());
     }
 
@@ -34,14 +42,20 @@ public class RoleService {
                         : Mono.error(notFound()));
     }
 
-    public Mono<ItemsResponse<RoleResponse>> addRole(long userId, String role) {
+    public Mono<ItemsResponse<RoleResponse>> addRole(long userId, String role, boolean admin) {
+        if (!admin) {
+            return Mono.error(adminOnly());
+        }
         return users.existsById(userId)
                 .flatMap(exists -> exists
                         ? users.addRole(userId, role).then(toItems(users.findRolesByUserId(userId)))
                         : Mono.error(notFound()));
     }
 
-    public Mono<ItemsResponse<RoleResponse>> removeRole(long userId, String role) {
+    public Mono<ItemsResponse<RoleResponse>> removeRole(long userId, String role, boolean admin) {
+        if (!admin) {
+            return Mono.error(adminOnly());
+        }
         if (RoleCode.GUEST.value().equals(role)) {
             return Mono.error(new ValidationException(
                     "GUEST_ROLE_REQUIRED", "Роль guest базовая, снять её нельзя"));
@@ -58,5 +72,9 @@ public class RoleService {
 
     private static NotFoundException notFound() {
         return new NotFoundException("USER_NOT_FOUND", "Пользователь не найден");
+    }
+
+    private static ForbiddenException adminOnly() {
+        return new ForbiddenException("Требуется роль admin");
     }
 }

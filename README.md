@@ -64,7 +64,23 @@ Content-Type: application/json
 }
 ```
 
-Ответ `201 Created`: токен и профиль с ролью `guest`.
+Ответ `201 Created`:
+
+```json
+{
+  "code": "OK",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiJ9...",
+    "tokenType": "Bearer",
+    "expiresIn": 3600,
+    "user": {
+      "id": 1,
+      "firstname": "Изекиль",
+      "roles": ["guest"]
+    }
+  }
+}
+```
 
 ### Вход
 
@@ -82,9 +98,20 @@ JWT содержит `sub` (user id), claim `roles`, `iss` и живёт 1 ча�
 
 ### Ошибки
 
+Все ответы приходят в одном конверте. Успех:
+
+```json
+{ "code": "OK", "data": { "id": 1, "firstname": "Изекиль" } }
+```
+
+Логическая ошибка, всегда с HTTP `200`:
+
 ```json
 { "code": "EMAIL_TAKEN", "message": "Этот email уже зарегистрирован" }
 ```
+
+Транспортные ошибки отдают `4xx`: битый JSON, неверные параметры, отсутствующий токен.
+`5xx` означают внутренний сбой сервиса. Тело у них такое же, с `code` и `message`.
 
 ## Структура
 
@@ -105,7 +132,7 @@ users-service/
     │   ├── mapper/       # UserMapper
     │   ├── security/     # конвертер ролей, обработчики 401/403
     │   ├── exception/    # ApiException и наследники
-    │   └── web/          # GlobalExceptionHandler
+    │   └── web/          # DomainExceptionHandler, TransportExceptionHandler
     └── resources/
         ├── application.yml
         └── db/migration/V1__init.sql

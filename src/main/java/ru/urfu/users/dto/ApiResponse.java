@@ -1,0 +1,38 @@
+package ru.urfu.users.dto;
+
+/**
+ * Единый конверт ответа. Успех: {@code code = "OK"} и данные в {@code data}.
+ * Логическая ошибка: свой {@code code}, текст в {@code message}, без {@code data}.
+ */
+public class ApiResponse<T> {
+
+    private final String code;
+    private final String message;
+    private final T data;
+
+    private ApiResponse(String code, String message, T data) {
+        this.code = code;
+        this.message = message;
+        this.data = data;
+    }
+
+    public static <T> ApiResponse<T> ok(T data) {
+        return new ApiResponse<>("OK", null, data);
+    }
+
+    public static <T> ApiResponse<T> error(String code, String message) {
+        return new ApiResponse<>(code, message, null);
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public T getData() {
+        return data;
+    }
+}
